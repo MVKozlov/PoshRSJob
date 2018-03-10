@@ -32,6 +32,9 @@ Function Start-RSJob {
 
         .PARAMETER Throttle
             Number of concurrent running runspace jobs which are allowed at a time.
+        
+        .PARAMETER ThreadOptions
+            Thread option used during creation of runspaces.
 
         .PARAMETER ModulesToImport
             A collection of modules that will be imported into the background runspace job. Collection can include:
@@ -181,6 +184,8 @@ Function Start-RSJob {
         [array]$ArgumentList = @(),
         [parameter()]
         [int]$Throttle = 5,
+        [parameter()]
+        [Management.Automation.Runspaces.PSThreadOptions]$ThreadOptions,
         [parameter()]
         [Alias('ModulesToLoad')]
         [string[]]$ModulesToImport,
@@ -567,6 +572,9 @@ Function Start-RSJob {
                     $RunspacePool.ApartmentState = 'STA'
                 }
                 [void]$RunspacePool.SetMaxRunspaces($Throttle)
+                If ($ThreadOptions) {
+                    [void]$RunspacePool.ThreadOptions = $ThreadOptions
+                }
                 If ($PSVersionTable.PSVersion.Major -gt 2) {
                     $RunspacePool.CleanupInterval = [timespan]::FromMinutes(2)
                 }
