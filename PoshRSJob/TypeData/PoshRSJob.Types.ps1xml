@@ -4,20 +4,9 @@
     <Members>
       <ScriptProperty>
         <Name>HasMoreData</Name>
-        <GetScriptBlock>            
+        <GetScriptBlock>
             $Flags = 'nonpublic','instance','static'
-            $_Worker = $This.innerjob.GetType().GetField('worker',$Flags)
-            if ($_Worker -eq $null) { $_Worker = $This.innerjob.GetType().GetField('_worker',$Flags) }
-            $Worker = $_Worker.GetValue($This.innerjob)
-
-            $_CRP = $worker.GetType().GetProperty('CurrentlyRunningPipeline',$Flags)
-            $CRP = $_CRP.GetValue($Worker, $Null)
-            $State = If (-NOT $This.handle.IsCompleted -AND -NOT [bool]$CRP) {
-                [System.Management.Automation.PSInvocationState]::NotStarted
-            }
-            Else {
-                $This.InnerJob.InvocationStateInfo.State
-            }
+            $State = $this.GetState()
             If ($PSVersionTable['PSEdition'] -and $PSVersionTable.PSEdition -eq 'Core') {
                 $IsReceived =$This.IsReceived
             }
@@ -58,19 +47,7 @@
       <ScriptProperty>
         <Name>State</Name>
         <GetScriptBlock>
-            $Flags = 'nonpublic','instance','static'
-            $_Worker = $This.innerjob.GetType().GetField('worker',$Flags)
-            if ($_Worker -eq $null) { $_Worker = $This.innerjob.GetType().GetField('_worker',$Flags) }
-            $Worker = $_Worker.GetValue($This.innerjob)
-
-            $_CRP = $worker.GetType().GetProperty('CurrentlyRunningPipeline',$Flags)
-            $CRP = $_CRP.GetValue($Worker, $Null)
-            If (-NOT $This.handle.IsCompleted -AND -NOT [bool]$CRP) {
-                [System.Management.Automation.PSInvocationState]::NotStarted
-            }
-            Else {
-                $This.InnerJob.InvocationStateInfo.State
-            }
+            $this.GetState()
         </GetScriptBlock>
       </ScriptProperty>
     </Members>

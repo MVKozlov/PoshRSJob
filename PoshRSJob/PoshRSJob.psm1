@@ -26,7 +26,7 @@ If ($PSVersionTable['PSEdition'] -and $PSVersionTable.PSEdition -eq 'Core') {
         [System.Management.Automation.PSInvocationState]$State
         [object]$InputObject
         [string]$InstanceID
-        [object]$Handle
+        [IAsyncResult]$Handle
         [object]$Runspace
         [System.Management.Automation.PowerShell]$InnerJob
         [System.Threading.ManualResetEvent]$Finished
@@ -42,8 +42,24 @@ If ($PSVersionTable['PSEdition'] -and $PSVersionTable.PSEdition -eq 'Core') {
         [string]$RunspacePoolID
         [bool]$Completed = $False
         [string]$Batch
+        [Nullable[DateTime]]$RunDate
         hidden [bool] $IsReceived = $False
-
+        hidden [object] $Worker
+        hidden [System.Reflection.PropertyInfo] $_CRP
+        hidden [void]__SetWorker($w, $c) {
+            $this.Worker = $w
+            $this._CRP = $c
+        }
+        [System.Management.Automation.PSInvocationState]GetState() {
+            $CRP = $this._CRP.GetValue($this.Worker, $Null)
+            $State_ = If (-NOT $this.Handle.IsCompleted -AND -NOT [bool]$CRP) {
+                [System.Management.Automation.PSInvocationState]::NotStarted
+            }
+            Else {
+                $this.InnerJob.InvocationStateInfo.State
+            }
+            return $State_
+        }
     }
 '@ | Invoke-Expression
 }
@@ -79,7 +95,7 @@ Else {
         public System.Management.Automation.PSInvocationState State;
         public object InputObject;
         public string InstanceID;
-        public object Handle;
+        public IAsyncResult Handle;
         public object Runspace;
         public System.Management.Automation.PowerShell InnerJob;
         public System.Threading.ManualResetEvent Finished;
@@ -95,9 +111,24 @@ Else {
         public string RunspacePoolID;
         public bool Completed = false;
         public string Batch;
+        public DateTime? RunDate;
         #pragma warning disable 414
         private bool IsReceived = false;
+        private object Worker = null;
+        private System.Reflection.PropertyInfo _CRP = null;
         #pragma warning restore 414
+        public void __SetWorker(object w, System.Reflection.PropertyInfo c) {
+            this.Worker = w;
+            this._CRP = c;
+        }
+        public System.Management.Automation.PSInvocationState GetState() {
+            object CRP = this._CRP.GetValue(this.Worker, null);
+            System.Management.Automation.PSInvocationState St = (! this.Handle.IsCompleted && null == CRP) ?
+                System.Management.Automation.PSInvocationState.NotStarted
+            :
+                this.InnerJob.InvocationStateInfo.State;
+            return St;
+        }
     }
 "@
 }
@@ -127,6 +158,16 @@ $PoshRS_jobCleanup.PowerShell = [PowerShell]::Create().AddScript({
         [System.Threading.Monitor]::Enter($PoshRS_Jobs.syncroot)
         try {
             Foreach($job in $PoshRS_Jobs) {
+                if ($job.RunDate -eq $null) {
+                    # ScriptProperty defined in PoshRSJob.Types.ps1xml doesn't work here
+                    # (why ??? It doesn't work even when I move Update-TypeData above of this code)
+                    # so $job.State always contains NotStarted and I need to get current state by method
+                    $State = $job.GetState()
+                    if ($State -ne [System.Management.Automation.PSInvocationState]::NotStarted) {
+                        $job.RunDate = Get-Date
+                    }
+                }
+
                 If ($job.Handle.isCompleted -AND (-NOT $Job.Completed)) {
                     #$PoshRS_jobCleanup.Host.UI.WriteVerboseLine("$($Job.Id) completed")
                     $Data = $null

@@ -511,6 +511,59 @@ Describe "Test RSJob Throttling" {
     }
 }
 
+Describe "Test RSJob Wait Per Job" {
+    $waitscript = {
+        param($sync)
+        $key = $_
+        1..10 | Foreach-Object {
+            Start-Sleep -Sec 2;
+            $sync[$key] += 2
+        }
+    }
+    # "-Milliseconds 200" sleeps need to sync start job and wait, because both have its own sleep timeouts
+    It "should wait 10 seconds" {
+		$syncHash = [hashtable]::Synchronized(@{1=0; 2=0});
+        $j = 1..2 | Start-RSJob -ArgumentList $syncHash -Throttle 1 -ScriptBlock $waitscript
+        Start-Sleep -Milliseconds 200
+		$j | Wait-RSJob -Timeout 10 | Remove-RSJob
+        Start-Sleep -Milliseconds 200
+		Get-RSJob | Remove-RSJob -Force
+		$syncHash[1] | Should Be 10
+		$syncHash[2] | Should be 0
+    }
+    It "should wait 10 seconds" {
+		$syncHash = [hashtable]::Synchronized(@{1=0; 2=0});
+        $j = 1..2 | Start-RSJob -ArgumentList $syncHash -Throttle 2 -ScriptBlock $waitscript
+        Start-Sleep -Milliseconds 200
+		$j | Wait-RSJob -Timeout 10 | Remove-RSJob
+        Start-Sleep -Milliseconds 200
+		Get-RSJob | Remove-RSJob -Force
+		$syncHash[1] | Should Be 10
+		$syncHash[2] | Should Be 10
+    }
+
+    It "should wait last job 10 seconds" {
+		$syncHash = [hashtable]::Synchronized(@{1=0; 2=0});
+        $j = 1..2 | Start-RSJob -ArgumentList $syncHash -Throttle 1 -ScriptBlock $waitscript
+        Start-Sleep -Milliseconds 200
+		$j | Wait-RSJob -Timeout 10 -PerJobTimeout | Remove-RSJob
+        Start-Sleep -Milliseconds 200
+		Get-RSJob | Remove-RSJob -Force
+		$syncHash[1] | Should Be 20
+		$syncHash[2] | Should Be 10
+    }
+    It "should wait two jobs for 10 seconds" {
+		$syncHash = [hashtable]::Synchronized(@{1=0; 2=0});
+        $j = 1..2 | Start-RSJob -ArgumentList $syncHash -Throttle 2 -ScriptBlock $waitscript
+        Start-Sleep -Milliseconds 200
+		$j | Wait-RSJob -Timeout 10 -PerJobTimeout | Remove-RSJob
+        Start-Sleep -Milliseconds 200
+		Get-RSJob | Remove-RSJob -Force
+		$syncHash[1] | Should Be 10
+		$syncHash[2] | Should Be 10
+    }
+}
+
 Describe "Module OnRemove Actions PS$PSVersion" {
     Context 'Strict mode' {
         Get-RSJob | Remove-RSJob

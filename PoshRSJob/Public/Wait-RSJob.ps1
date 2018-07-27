@@ -37,7 +37,10 @@ Function Wait-RSJob {
 
         .PARAMETER Timeout
             Timeout after specified number of seconds. This is a global timeout meaning that it is not a per
-            job timeout.
+            job timeout if PerJobTimeout switch not used
+
+        .PARAMETER PerJobTimeout
+            Use Timeout as per job timeout. Every job wait to be started and allow to run Timeout seconds before exiting cycle
 
         .PARAMETER ShowProgress
             Displays a progress bar
@@ -81,6 +84,7 @@ Function Wait-RSJob {
         [ValidateSet('NotStarted','Running','Completed','Failed','Stopping','Stopped','Disconnected')]
         [string[]]$State,
         [int]$Timeout,
+        [switch]$PerJobTimeout,
         [switch]$ShowProgress
     )
     Begin {
@@ -103,11 +107,13 @@ Function Wait-RSJob {
         }
         if (-not $List.Count) { return } # No jobs selected to search
         [void]$PSBoundParameters.Remove('Timeout')
+        [void]$PSBoundParameters.Remove('PerJobTimeout')
         [void]$PSBoundParameters.Remove('ShowProgress')
         [array]$WaitJobs = Get-RSJob @PSBoundParameters
 
         $TotalJobs = $WaitJobs.Count
         $Completed = 0
+        $TimedOut = 0
         Write-Verbose "Wait for $($TotalJobs) jobs"
         $Date = Get-Date
         while ($Waitjobs.Count -ne 0) {
@@ -119,7 +125,13 @@ Function Wait-RSJob {
                 If($WaitJob.State -match 'Completed|Failed|Stopped|Suspended|Disconnected' -and $WaitJob.Completed) {
                     [void]$JustFinishedJobs.Add($WaitJob)
                 } Else {
-                    [void]$RunningJobs.Add($WaitJob)
+                    if ($PerJobTimeout -and $Timeout -and $WaitJob.RunDate -and (New-Timespan $WaitJob.RunDate).TotalSeconds -ge $Timeout) {
+                        # Skip timed out jobs
+                        $TimedOut++
+                    }
+                    else {
+                        [void]$RunningJobs.Add($WaitJob)
+                    }
                 }
             }
             $WaitJobs = $RunningJobs
@@ -129,12 +141,13 @@ Function Wait-RSJob {
             $Completed += $JustFinishedJobs.Count
             Write-Debug "Wait: $($Waitjobs.Count)"
             Write-Debug "Completed: ($Completed)"
+            Write-Debug "TimedOut: ($TimedOut)"
             Write-Debug "Total: ($Totaljobs)"
             Write-Debug "Status: $($Completed/$TotalJobs)"
             If ($ShowProgress) {
                 Write-Progress -Activity "RSJobs Tracker" -Status ("Remaining Jobs: {0}" -f $Waitjobs.Count) -PercentComplete (($Completed/$TotalJobs)*100)
             }
-            if($Timeout -and (New-Timespan $Date).TotalSeconds -ge $Timeout){
+            if ($Timeout -and -Not $PerJobTimeout -and (New-Timespan $Date).TotalSeconds -ge $Timeout) {
                 break
             }
         }

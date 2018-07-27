@@ -348,6 +348,10 @@ Function Start-RSJob {
             }
         }
         Write-Debug "ListCount: $($List.Count)"
+
+        $_CRP = $Null
+        $_Worker = $Null
+        $_Flags = 'nonpublic','instance','static'
     }
 
     Process {
@@ -584,6 +588,15 @@ Function Start-RSJob {
             Else {
                 $JobName.InvokeReturnAsIs()
             }
+            if ($Null -eq $_Worker) {
+                $jobtype = $PowerShell.GetType()
+                $_Worker = $jobtype.GetField('worker',$_Flags)
+                if ($Null -eq $_Worker) { $_Worker = $jobtype.GetField('_worker',$_Flags) }
+            }
+            $Worker = $_Worker.GetValue($PowerShell)
+            if ($Null -eq $_CRP) {
+                $_CRP = $Worker.GetType().GetProperty('CurrentlyRunningPipeline',$_Flags)
+            }
             $Object = New-Object RSJob -Property @{
                 Name = $_JobName
                 InputObject = $Item
@@ -597,6 +610,7 @@ Function Start-RSJob {
                 RunspacePoolID = $RunSpacePoolID
                 Batch          = $Batch
             }
+            $Object.__SetWorker($Worker, $_CRP)
 
             $RSPObject.LastActivity = Get-Date
             Write-Verbose "Adding RSJob to Jobs queue"
