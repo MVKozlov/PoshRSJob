@@ -42,6 +42,9 @@ Function Wait-RSJob {
         .PARAMETER PerJobTimeout
             Use Timeout as per job timeout. Every job wait to be started and allow to run Timeout seconds before exiting cycle
 
+        .PARAMETER StopTimedOutJobs
+            Stop timed out jobs
+
         .PARAMETER ShowProgress
             Displays a progress bar
 
@@ -85,6 +88,7 @@ Function Wait-RSJob {
         [string[]]$State,
         [int]$Timeout,
         [switch]$PerJobTimeout,
+        [switch]$StopTimedOutJobs,
         [switch]$ShowProgress
     )
     Begin {
@@ -109,6 +113,7 @@ Function Wait-RSJob {
         [void]$PSBoundParameters.Remove('Timeout')
         [void]$PSBoundParameters.Remove('PerJobTimeout')
         [void]$PSBoundParameters.Remove('ShowProgress')
+        [void]$PSBoundParameters.Remove('StopTimedOutJobs')
         [array]$WaitJobs = Get-RSJob @PSBoundParameters
 
         $TotalJobs = $WaitJobs.Count
@@ -126,6 +131,9 @@ Function Wait-RSJob {
                     [void]$JustFinishedJobs.Add($WaitJob)
                 } Else {
                     if ($PerJobTimeout -and $Timeout -and $WaitJob.RunDate -and (New-Timespan $WaitJob.RunDate).TotalSeconds -ge $Timeout) {
+                        if ($StopTimedOutJobs) {
+                            $WaitJob | Stop-RSJob -PassThru
+                        }
                         # Skip timed out jobs
                         $TimedOut++
                     }
@@ -148,6 +156,9 @@ Function Wait-RSJob {
                 Write-Progress -Activity "RSJobs Tracker" -Status ("Remaining Jobs: {0}" -f $Waitjobs.Count) -PercentComplete (($Completed/$TotalJobs)*100)
             }
             if ($Timeout -and -Not $PerJobTimeout -and (New-Timespan $Date).TotalSeconds -ge $Timeout) {
+                if ($StopTimedOutJobs) {
+                    $WaitJobs | Stop-RSJob -PassThru
+                }
                 break
             }
         }

@@ -21,6 +21,9 @@ Function Stop-RSJob {
         .PARAMETER Batch
             Name of the set of jobs to stop.
 
+        .PARAMETER PassThru
+            Allow to passthru job object
+
         .NOTES
             Name: Stop-RSJob
             Author: Boe Prox/Max Kozlov
@@ -58,7 +61,8 @@ Function Stop-RSJob {
         [string[]]$InstanceID,
         [parameter(ValueFromPipelineByPropertyName=$True,
         ParameterSetName='Batch')]
-        [string[]]$Batch
+        [string[]]$Batch,
+        [switch]$PassThru
     )
     Begin {
         If ($PSBoundParameters['Debug']) {
@@ -77,6 +81,7 @@ Function Stop-RSJob {
     End {
         if (-not $List.Count) { return } # No jobs selected to search
         $PSBoundParameters[$Property] = $List
+        [void]$PSBoundParameters.Remove('PassThru')
         [array]$ToStop = Get-RSJob @PSBoundParameters
 
         If ($ToStop.Count) {
@@ -87,6 +92,9 @@ Function Stop-RSJob {
                     if ($_.State -ne 'Completed') {
                         Write-Verbose "Killing job $($_.InstanceId)"
                         [void] $_.InnerJob.Stop()
+                    }
+                    if ($PassThru) {
+                        $_
                     }
                 }
             }
