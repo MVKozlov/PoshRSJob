@@ -73,11 +73,22 @@ Function Receive-RSJob {
             $DebugPreference = 'Continue'
         }
         $List = New-Object System.Collections.ArrayList
+        $isReseivedStates = @("Completed", "Failed", "Stopped")
     }
     Process {
-        Write-Debug "ParameterSet: $($PSCmdlet.ParameterSetName)"
+        Write-Debug "Receive-RSJob. ParameterSet: $($PSCmdlet.ParameterSetName)"
         $Property = $PSCmdlet.ParameterSetName
-        if ($PSBoundParameters[$Property]) {
+        # Will be good to obsolete any other parameters except Job
+        if ($Property -eq 'Job') { # Receive data right from pipeline
+            if ($Job) {
+                $Job | WriteStream
+                if ($isReseivedStates -contains $Job.State) {
+                    $Job | SetIsReceived -SetTrue
+                }
+            }
+        }
+        elseif ($PSBoundParameters[$Property]) { # Receive data in the End block
+            Write-Warning "Any job identification parameters considered obsolete, please, use Get-RSJob for this"
             Write-Verbose "Adding $($PSBoundParameters[$Property])"
             [void]$List.AddRange($PSBoundParameters[$Property])
         }
@@ -90,7 +101,7 @@ Function Receive-RSJob {
         if ($ToReceive.Count) {
             $ToReceive | ForEach-Object{
                 $_ | WriteStream
-                if (@("Completed", "Failed", "Stopped") -contains $_.State) {
+                if ($isReseivedStates -contains $_.State) {
                     $_ | SetIsReceived -SetTrue
                 }
             }

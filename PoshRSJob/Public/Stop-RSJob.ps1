@@ -71,9 +71,31 @@ Function Stop-RSJob {
         $List = New-Object System.Collections.ArrayList
     }
     Process {
-        Write-Debug "ParameterSet: $($PSCmdlet.ParameterSetName)"
+        Write-Debug "Stop-RSJob. ParameterSet: $($PSCmdlet.ParameterSetName)"
         $Property = $PSCmdlet.ParameterSetName
-        if ($PSBoundParameters[$Property]) {
+        # Will be good to obsolete any other parameters except Job
+        if ($Property -eq 'Job') { # Stop Jobs right from pipeline
+            [System.Threading.Monitor]::Enter($PoshRS_jobs.syncroot)
+            try {
+                if ($Job) {
+                    $Job | ForEach-Object {
+                        Write-Verbose "Stopping $($_.InstanceId)"
+                        if ($_.State -ne 'Completed') {
+                            Write-Verbose "Killing job $($_.InstanceId)"
+                            [void] $_.InnerJob.Stop()
+                        }
+                        if ($PassThru) {
+                            $_
+                        }
+                    }
+                }
+            }
+            finally {
+                [System.Threading.Monitor]::Exit($PoshRS_jobs.syncroot)
+            }
+        }
+        elseif ($PSBoundParameters[$Property]) { # Stop Jobs in the End block
+            Write-Warning "Any job identification parameters considered obsolete, please, use Get-RSJob for this"
             Write-Verbose "Adding $($PSBoundParameters[$Property])"
             [void]$List.AddRange($PSBoundParameters[$Property])
         }

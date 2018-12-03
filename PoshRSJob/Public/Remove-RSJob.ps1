@@ -74,9 +74,13 @@ Function Remove-RSJob {
         $List = New-Object System.Collections.ArrayList
     }
     Process {
-        Write-Debug "ParameterSet: $($PSCmdlet.ParameterSetName)"
+        Write-Debug "Remove-RSJob. ParameterSet: $($PSCmdlet.ParameterSetName)"
         $Property = $PSCmdlet.ParameterSetName
-        if ($PSBoundParameters[$Property]) {
+        # Will be good to obsolete any other parameters except Job
+        if ($PSBoundParameters[$Property]) { # Receive data in the End block
+            if ($Property -ne 'Job') {
+                Write-Warning "Any job identification parameters considered obsolete, please, use Get-RSJob for this"
+            }
             Write-Verbose "Adding $($PSBoundParameters[$Property])"
             [void]$List.AddRange($PSBoundParameters[$Property])
         }

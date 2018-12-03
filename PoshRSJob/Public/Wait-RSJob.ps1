@@ -110,11 +110,17 @@ Function Wait-RSJob {
             $PSBoundParameters[$Property] = $List
         }
         if (-not $List.Count) { return } # No jobs selected to search
-        [void]$PSBoundParameters.Remove('Timeout')
-        [void]$PSBoundParameters.Remove('PerJobTimeout')
-        [void]$PSBoundParameters.Remove('ShowProgress')
-        [void]$PSBoundParameters.Remove('StopTimedOutJobs')
-        [array]$WaitJobs = Get-RSJob @PSBoundParameters
+        # for Job parameter do not call Get-RSJob - it's already here
+        if ($PSCmdlet.ParameterSetName -eq 'Job') {
+            [array]$WaitJobs = $List
+        }
+        else {
+            [void]$PSBoundParameters.Remove('Timeout')
+            [void]$PSBoundParameters.Remove('PerJobTimeout')
+            [void]$PSBoundParameters.Remove('ShowProgress')
+            [void]$PSBoundParameters.Remove('StopTimedOutJobs')
+            [array]$WaitJobs = Get-RSJob @PSBoundParameters
+        }
 
         $TotalJobs = $WaitJobs.Count
         $Completed = 0
