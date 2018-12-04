@@ -260,6 +260,13 @@ Describe "Get-RSJob PS$PSVersion" {
             $Jobs.Count | Should Be 5
         }
 
+        It 'should return jobs by batch' {
+            1..5 | Start-RSJob { Start-Sleep -Seconds 5; $_ } -Batch testbatch1
+            1..5 | Start-RSJob { Start-Sleep -Seconds 5; $_ } -Batch testbatch2
+            $Jobs = @(Get-RSJob -Batch testbatch2)
+            $Jobs.Count | Should Be 5
+        }
+
         It 'should return job details <Case>' -TestCases $ParameterTestCases {
             param(
                 $Case,
@@ -309,7 +316,7 @@ Describe "Stop-RSJob PS$PSVersion" {
             Start-Sleep -Milliseconds 100
             $Job.State | Should be 'Stopped'
         }
-        It 'should stop a job <Case>' -TestCases $ParameterTestCases {
+        It 'should stop a job <Case>' -TestCases $ParameterTestCases[0,1] { # other cases obsolete
             param(
                 $Case,
                 $Mode,
@@ -393,7 +400,7 @@ Describe "Receive-RSJob PS$PSVersion" {
             Receive-RSJob | Should BeNullOrEmpty
         }
 
-        It 'should retrieve job data <Case>' -TestCases $ParameterTestCases {
+        It 'should retrieve job data <Case>' -TestCases $ParameterTestCases[0,1] { # other cases obsolete
             param(
                 $Case,
                 $Mode,
@@ -433,7 +440,7 @@ Describe "Remove-RSJob PS$PSVersion" {
             Remove-RSJob | Should BeNullOrEmpty
         }
 
-        It 'should only remove specified jobs <Case>' -TestCases $ParameterTestCases {
+        It 'should only remove specified jobs <Case>' -TestCases $ParameterTestCases[0,1] { # other cases obsolete
             param(
                 $Case,
                 $Mode,
@@ -493,6 +500,17 @@ Describe "Remove-RSJob PS$PSVersion" {
 
             $Output.Count | Should be 0
         }
+    }
+}
+
+Describe "Test proper job pipelining for Wait/Receive" {
+    It "Should receive data as soon as wait done" {
+        $jobs = (Start-RSJob { Start-Sleep -Seconds 5; [datetime]::Now }),
+                (Start-RSJob { Start-Sleep -Seconds 10; [datetime]::Now })
+        $objects = $jobs | Wait-RSJob | Receive-RSJob | ForEach-Object { [PSCustomObject]@{JTime = $_; RTime= [datetime]::Now} }
+        $objects.Count | Should be 2
+        ($objects[0].RTime - $objects[0].JTime).TotalSeconds -le 0.5 | Should Be $true
+        ($objects[1].RTime - $objects[1].JTime).TotalSeconds -le 0.5 | Should Be $true
     }
 }
 

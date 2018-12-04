@@ -94,17 +94,9 @@ Function Receive-RSJob {
         }
     }
     End {
-        if (-not $List.Count) { return } # No jobs selected to search
-        $PSBoundParameters[$Property] = $List
-        [array]$ToReceive = Get-RSJob @PSBoundParameters
-
-        if ($ToReceive.Count) {
-            $ToReceive | ForEach-Object{
-                $_ | WriteStream
-                if ($isReseivedStates -contains $_.State) {
-                    $_ | SetIsReceived -SetTrue
-                }
-            }
+        if ($List.Count) { # obsolete parameter sets used
+            $PSBoundParameters[$Property] = $List
+            Get-RSJob @PSBoundParameters | Receive-RSJob
         }
     }
 }

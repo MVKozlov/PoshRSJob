@@ -135,13 +135,17 @@ Function Get-RSJob {
             else {
                 Write-Verbose "Jobs by $Property"
                 # And Hash much faster than foreach{ foreach {} } inner loop
-                $Hash = @{}
+                $Hash = New-Object -TypeName 'System.Collections.Generic.Dictionary`2[[System.Object],[System.Array]]'
                 foreach ($jobobj in $PoshRS_Jobs) {
-                    $Hash[$jobobj.$Property] = $jobobj
+                    $k = $jobobj.$Property
+                    if (-not $Hash.ContainsKey($k)) {
+                        $Hash[$k] = @()
+                    }
+                    $Hash[$k] += $jobobj
                 }
                 foreach ($prop in $SearchProps) {
-                    if ($Hash.Contains($prop)) {
-                        [void]$ResultJobs.Add($Hash[$prop])
+                    if ($Hash.ContainsKey($prop)) {
+                        [void]$ResultJobs.AddRange($Hash[$prop])
                     }
                 }
             }

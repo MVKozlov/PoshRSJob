@@ -101,28 +101,10 @@ Function Stop-RSJob {
         }
     }
     End {
-        if (-not $List.Count) { return } # No jobs selected to search
-        $PSBoundParameters[$Property] = $List
-        [void]$PSBoundParameters.Remove('PassThru')
-        [array]$ToStop = Get-RSJob @PSBoundParameters
-
-        If ($ToStop.Count) {
-            [System.Threading.Monitor]::Enter($PoshRS_jobs.syncroot)
-            try {
-                $ToStop | ForEach-Object {
-                    Write-Verbose "Stopping $($_.InstanceId)"
-                    if ($_.State -ne 'Completed') {
-                        Write-Verbose "Killing job $($_.InstanceId)"
-                        [void] $_.InnerJob.Stop()
-                    }
-                    if ($PassThru) {
-                        $_
-                    }
-                }
-            }
-            finally {
-                [System.Threading.Monitor]::Exit($PoshRS_jobs.syncroot)
-            }
+        if ($List.Count) { # obsolete parameter sets used
+            $PSBoundParameters[$Property] = $List
+            [void]$PSBoundParameters.Remove('PassThru')
+            Get-RSJob @PSBoundParameters | Stop-RSJob -PassThru:$PassThru
         }
     }
 }
