@@ -80,7 +80,7 @@ Function Stop-RSJob {
                 if ($Job) {
                     $Job | ForEach-Object {
                         Write-Verbose "Stopping $($_.InstanceId)"
-                        if ($_.State -ne 'Completed') {
+                        if ($_.State -ne 'Completed' -and $_.State -ne 'Failed' -and $_.State -ne 'Stopped') {
                             Write-Verbose "Killing job $($_.InstanceId)"
                             [void] $_.InnerJob.Stop()
                         }
