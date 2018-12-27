@@ -200,9 +200,11 @@ $PoshRS_jobCleanup.PowerShell = [PowerShell]::Create().AddScript({
         try {
             Foreach($job in $PoshRS_Jobs) {
                 if ($job.RunDate -eq $null) {
-                    # After moving all function import and PoshRSJob.Types.ps1xml above it now work as property
-                    #$State = $job.GetState()
-                    if ($job.State -ne [System.Management.Automation.PSInvocationState]::NotStarted) {
+                    # ScriptProperty defined in PoshRSJob.Types.ps1xml doesn't work here
+                    # (why ???)
+                    # so $job.State always contains NotStarted and I need to get current state by method
+                    $State = $job.GetState()
+                    if ($State -ne [System.Management.Automation.PSInvocationState]::NotStarted) {
                         $job.RunDate = Get-Date
                     }
                 }
