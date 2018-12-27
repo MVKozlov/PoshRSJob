@@ -133,6 +133,41 @@ Else {
 "@
 }
 
+#region Load Public Functions
+Try {
+    Get-ChildItem "$ScriptPath\Public" -Filter *.ps1 | Select-Object -ExpandProperty FullName | ForEach-Object {
+        $Function = Split-Path $_ -Leaf
+        . $_
+    }
+} Catch {
+    Write-Warning ("{0}: {1}" -f $Function,$_.Exception.Message)
+    Continue
+}
+#endregion Load Public Functions
+
+#region Load Private Functions
+Try {
+    Get-ChildItem "$ScriptPath\Private" -Filter *.ps1 | Select-Object -ExpandProperty FullName | ForEach-Object {
+        $Function = Split-Path $_ -Leaf
+        . $_
+    }
+} Catch {
+    Write-Warning ("{0}: {1}" -f $Function,$_.Exception.Message)
+    Continue
+}
+#endregion Load Private Functions
+
+#region Format and Type Data
+Try {
+    Update-FormatData "$ScriptPath\TypeData\PoshRSJob.Format.ps1xml" -ErrorAction Stop
+}
+Catch {}
+Try {
+    Update-TypeData "$ScriptPath\TypeData\PoshRSJob.Types.ps1xml" -ErrorAction Stop
+}
+Catch {}
+#endregion Format and Type Data
+
 #region RSJob Variables
 Write-Verbose "Creating RS collections"
 New-Variable PoshRS_Jobs -Value ([System.Collections.ArrayList]::Synchronized([System.Collections.ArrayList]@())) -Option ReadOnly -Scope Global -Force
@@ -147,7 +182,13 @@ Write-Verbose "Creating routine to monitor RS jobs"
 $PoshRS_jobCleanup.Flag=$True
 $PoshRS_jobCleanup.Host = $Host
 $PSModulePath = $env:PSModulePath
-$PoshRS_jobCleanup.Runspace =[runspacefactory]::CreateRunspace()
+
+$TryReceiveDataDefinition = Get-Content Function:\TryReceiveData -ErrorAction Stop
+$SS_TryReceiveDataFunction = New-Object System.Management.Automation.Runspaces.SessionStateFunctionEntry -ArgumentList 'TryReceiveData', $TryReceiveDataDefinition
+$PoshRS_jobCleanup_InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+$PoshRS_jobCleanup_InitialSessionState.Commands.Add($SS_TryReceiveDataFunction)
+
+$PoshRS_jobCleanup.Runspace =[runspacefactory]::CreateRunspace($PoshRS_jobCleanup_InitialSessionState)
 $PoshRS_jobCleanup.Runspace.Open()
 $PoshRS_jobCleanup.Runspace.SessionStateProxy.SetVariable("PoshRS_jobCleanup",$PoshRS_jobCleanup)
 $PoshRS_jobCleanup.Runspace.SessionStateProxy.SetVariable("PoshRS_Jobs",$PoshRS_Jobs)
@@ -159,53 +200,13 @@ $PoshRS_jobCleanup.PowerShell = [PowerShell]::Create().AddScript({
         try {
             Foreach($job in $PoshRS_Jobs) {
                 if ($job.RunDate -eq $null) {
-                    # ScriptProperty defined in PoshRSJob.Types.ps1xml doesn't work here
-                    # (why ??? It doesn't work even when I move Update-TypeData above of this code)
-                    # so $job.State always contains NotStarted and I need to get current state by method
-                    $State = $job.GetState()
-                    if ($State -ne [System.Management.Automation.PSInvocationState]::NotStarted) {
+                    # After moving all function import and PoshRSJob.Types.ps1xml above it now work as property
+                    #$State = $job.GetState()
+                    if ($job.State -ne [System.Management.Automation.PSInvocationState]::NotStarted) {
                         $job.RunDate = Get-Date
                     }
                 }
-
-                If ($job.Handle.isCompleted -AND (-NOT $Job.Completed)) {
-                    #$PoshRS_jobCleanup.Host.UI.WriteVerboseLine("$($Job.Id) completed")
-                    $Data = $null
-                    $CaughtErrors = $null
-                    Try {
-                        $Data = $job.InnerJob.EndInvoke($job.Handle)
-                    } Catch {
-                        $CaughtErrors = $Error
-                        #$PoshRS_jobCleanup.Host.UI.WriteVerboseLine("$($Job.Id) Caught terminating Error in job: $_")
-                    }
-                    #$PoshRS_jobCleanup.Host.UI.WriteVerboseLine("$($Job.Id) Checking for errors")
-                    If ($job.InnerJob.Streams.Error -OR $CaughtErrors) {
-                        #$PoshRS_jobCleanup.Host.UI.WriteVerboseLine("$($Job.Id) Errors Found!")
-                        $ErrorList = New-Object System.Management.Automation.PSDataCollection[System.Management.Automation.ErrorRecord]
-                        If ($job.InnerJob.Streams.Error) {
-                            ForEach ($Err in $job.InnerJob.Streams.Error) {
-                                #$PoshRS_jobCleanup.Host.UI.WriteVerboseLine("`t$($Job.Id) Adding Error")
-                                [void]$ErrorList.Add($Err)
-                            }
-                        }
-                        If ($CaughtErrors) {
-                            ForEach ($Err in $CaughtErrors) {
-                                #$PoshRS_jobCleanup.Host.UI.WriteVerboseLine("`t$($Job.Id) Adding Error")
-                                [void]$ErrorList.Add($Err)
-                            }
-                        }
-                        $job.Error = $ErrorList
-                    }
-                    #$PoshRS_jobCleanup.Host.UI.WriteVerboseLine("$($Job.Id) Disposing job")
-                    $job.InnerJob.dispose()
-                    #Return type from Invoke() is a generic collection; need to verify the first index is not NULL
-                    If ($Data -and ($Data.Count -gt 0) -AND (-NOT ($Data.Count -eq 1 -AND $Null -eq $Data[0]))) {
-                        $job.output = $Data
-                        $job.HasMoreData = $True
-                    }
-                    $Error.Clear()
-                    $job.Completed = $True
-                }
+                TryReceiveData $Job
             }
         }
         finally {
@@ -289,41 +290,6 @@ $PoshRS_RunspacePoolCleanup.PowerShell = [PowerShell]::Create().AddScript({
 $PoshRS_RunspacePoolCleanup.PowerShell.Runspace = $PoshRS_RunspacePoolCleanup.Runspace
 $PoshRS_RunspacePoolCleanup.Handle = $PoshRS_RunspacePoolCleanup.PowerShell.BeginInvoke()
 #endregion Cleanup Routine
-
-#region Load Public Functions
-Try {
-    Get-ChildItem "$ScriptPath\Public" -Filter *.ps1 | Select-Object -ExpandProperty FullName | ForEach-Object {
-        $Function = Split-Path $_ -Leaf
-        . $_
-    }
-} Catch {
-    Write-Warning ("{0}: {1}" -f $Function,$_.Exception.Message)
-    Continue
-}
-#endregion Load Public Functions
-
-#region Load Private Functions
-Try {
-    Get-ChildItem "$ScriptPath\Private" -Filter *.ps1 | Select-Object -ExpandProperty FullName | ForEach-Object {
-        $Function = Split-Path $_ -Leaf
-        . $_
-    }
-} Catch {
-    Write-Warning ("{0}: {1}" -f $Function,$_.Exception.Message)
-    Continue
-}
-#endregion Load Private Functions
-
-#region Format and Type Data
-Try {
-    Update-FormatData "$ScriptPath\TypeData\PoshRSJob.Format.ps1xml" -ErrorAction Stop
-}
-Catch {}
-Try {
-    Update-TypeData "$ScriptPath\TypeData\PoshRSJob.Types.ps1xml" -ErrorAction Stop
-}
-Catch {}
-#endregion Format and Type Data
 
 #region Aliases
 New-Alias -Name ssj -Value Start-RSJob -Force

@@ -81,6 +81,13 @@ Function Receive-RSJob {
         # Will be good to obsolete any other parameters except Job
         if ($Property -eq 'Job') { # Receive data right from pipeline
             if ($Job) {
+                [System.Threading.Monitor]::Enter($PoshRS_Jobs.syncroot)
+                try {
+                    $Job | TryReceiveData
+                }
+                finally {
+                    [System.Threading.Monitor]::Exit($PoshRS_Jobs.syncroot)
+                }
                 $Job | WriteStream
                 if ($isReseivedStates -contains $Job.State) {
                     $Job | SetIsReceived -SetTrue

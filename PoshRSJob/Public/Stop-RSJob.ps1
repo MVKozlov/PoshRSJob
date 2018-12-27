@@ -82,9 +82,20 @@ Function Stop-RSJob {
                         Write-Verbose "Stopping $($_.InstanceId)"
                         if ($_.State -ne 'Completed' -and $_.State -ne 'Failed' -and $_.State -ne 'Stopped') {
                             Write-Verbose "Killing job $($_.InstanceId)"
-                            [void] $_.InnerJob.Stop()
+                            if ($PassThru) {
+                                [void] $_.InnerJob.Stop()
+                                $_
+                            }
+                            else {
+                                [void]$List.Add(
+                                    (New-Object -Typename PSObject -Property @{
+                                        Job = $_
+                                        StopHandle = $_.InnerJob.BeginStop($null, $null)
+                                    })
+                                )
+                            }
                         }
-                        if ($PassThru) {
+                        elseif ($PassThru) {
                             $_
                         }
                     }
@@ -101,7 +112,13 @@ Function Stop-RSJob {
         }
     }
     End {
-        if ($List.Count) { # obsolete parameter sets used
+        if ($PSCmdlet.ParameterSetName -eq 'Job' -and $List.Count -gt 0) {
+            Write-Debug "End"
+            foreach ($o in $List) {
+                $o.Job.InnerJob.EndStop($o.StopHandle)
+            }
+        }
+        elseif ($List.Count) { # obsolete parameter sets used
             $PSBoundParameters[$Property] = $List
             [void]$PSBoundParameters.Remove('PassThru')
             Get-RSJob @PSBoundParameters | Stop-RSJob -PassThru:$PassThru
