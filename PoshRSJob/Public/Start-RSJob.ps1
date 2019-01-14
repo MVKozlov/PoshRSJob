@@ -352,9 +352,12 @@ Function Start-RSJob {
         $_CRP = $Null
         $_Worker = $Null
         $_Flags = 'nonpublic','instance','static'
+
+        $EmptyPipeline = $true
     }
 
     Process {
+        $EmptyPipeline = $false
         Write-Debug "[PROCESS]"
         If ($PSBoundParameters.ContainsKey('InputObject')) {
             [void]$List.AddRange(@($InputObject))
@@ -365,6 +368,9 @@ Function Start-RSJob {
 
     End {
         Write-Debug "[END]"
+        # for "@() | function" only begin{} and end{} block executed, so if it detected just exit and not try to run anything
+        if ($EmptyPipeline) { return }
+
         $SBParamVars = @(GetParamVariable -ScriptBlock $ScriptBlock)
         $SBParamCount = $SBParamVars.Count
         $ArgumentCount = $ArgumentList.Count
@@ -398,6 +404,7 @@ Function Start-RSJob {
         #
 
         Write-Debug ("ArgumentCount: $ArgumentCount | List.Count: $($List.Count) | SBParamCount: $SBParamCount | InsertPSItemParam: $InsertPSItemParam")
+
         #region Convert ScriptBlock for $Using:
         $PreviousErrorAction = $ErrorActionPreference
         $ErrorActionPreference = 'Stop'

@@ -236,7 +236,9 @@ Describe "Start-RSJob PS$PSVersion" {
                 } -VariablesToImport tester0, testvar* | Wait-RSJob | Receive-RSJob)
             ($Output2 -join ',') | Should Be 'tester012,testvar124,testvar248'
         }
-
+        It 'should not run any jobs' {
+            @() | Start-RSJob { 1 } | Should BeNullOrEmpty
+        }
     }
 }
 
