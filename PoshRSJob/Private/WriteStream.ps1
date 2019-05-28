@@ -5,23 +5,24 @@
         [Object]$IndividualJob
     )
     Begin {
-        $Streams = "Verbose","Warning","Error","Output","Debug"
+        $Streams = "Verbose","Warning","Error","Output","Debug","Information"
     }
 
     Process {
         ForEach ($Stream in $Streams)
         {
-            If (($IndividualJob.$Stream))
+            $streamData = $IndividualJob.InnerJob.Streams.$Stream
+            If ($IndividualJob.$Stream -or $streamData)
             {
                 Switch ($Stream) {
-                    "Verbose" { $IndividualJob | Select-Object -ExpandProperty Verbose| Where-Object { $_ } | ForEach-Object { $host.ui.WriteVerboseLine($_)} }                    
-                    "Debug"   { $IndividualJob | Select-Object -ExpandProperty Debug| Where-Object { $_ } | ForEach-Object { $host.ui.WriteDebugLine($_)} }
-                    "Warning" { $IndividualJob | Select-Object -ExpandProperty Warning| Where-Object { $_ } | ForEach-Object { $host.ui.WriteWarningLine($_) } }
-                    "Error"   { $IndividualJob | Select-Object -ExpandProperty Error | ForEach-Object {$host.ui.WriteErrorLine($_)} }
-                    "Output"  { $IndividualJob | Where-Object { $_ } | Select-Object -ExpandProperty Output }
+                    "Verbose"     { $streamData | ForEach-Object { Write-Verbose $_     } }
+                    "Debug"       { $streamData | ForEach-Object { Write-Debug   $_     } }
+                    "Warning"     { $streamData | ForEach-Object { Write-Warning $_     } }
+                    "Error"       { $streamData | ForEach-Object { Write-Error   $_     } }
+                    "Information" { $streamData | ForEach-Object { Write-Information $_ } }
+                    "Output"      { $IndividualJob | Where-Object { $_ } | Select-Object -ExpandProperty Output }
                 }
             }
-
         }
     }
 }
