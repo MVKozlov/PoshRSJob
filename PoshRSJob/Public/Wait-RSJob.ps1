@@ -48,6 +48,9 @@ Function Wait-RSJob {
         .PARAMETER ShowProgress
             Displays a progress bar
 
+        .PARAMETER Any
+            Wait for any job completion, outout completed and exit (do not wait for other!
+
         .NOTES
             Name: Wait-RSJob
             Author: Ryan Bushe/Boe Prox/Max Kozlov
@@ -89,7 +92,8 @@ Function Wait-RSJob {
         [int]$Timeout,
         [switch]$PerJobTimeout,
         [switch]$StopTimedOutJobs,
-        [switch]$ShowProgress
+        [switch]$ShowProgress,
+        [switch]$Any
     )
     Begin {
         If ($PSBoundParameters['Debug']) {
@@ -151,6 +155,9 @@ Function Wait-RSJob {
             $WaitJobs = $RunningJobs
 
             $JustFinishedJobs
+            if ($Any -and $JustFinishedJobs.Count) {
+                break
+            }
 
             $Completed += $JustFinishedJobs.Count
             Write-Debug "Wait: $($Waitjobs.Count)"

@@ -391,6 +391,15 @@ Describe "Wait-RSJob PS$PSVersion" {
             $EndDate = Get-Date
             ( $EndDate - $StartDate ).TotalSeconds -gt 3 | Should be $True
         }
+
+        It 'should wait for a 1 job' {
+            $output = @(1..3 | Start-RSJob { Start-Sleep -Seconds $_; $_ } | Wait-RSJob -Any:$true)
+            $output.Count -eq 1 | Should Be $True
+        }
+        It 'should wait for a 3 jobs' {
+            $output = @(1..3 | Start-RSJob { Start-Sleep -Seconds $_; $_ } | Wait-RSJob -Any:$false)
+            $output.Count -eq 3 | Should Be $True
+        }
     }
 }
 
