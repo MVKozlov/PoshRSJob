@@ -1,4 +1,4 @@
-function TryReceiveData {
+Function TryReceiveData {
 param(
     [Parameter(ValueFromPipeline = $true)]
     [RSJob]$Job
