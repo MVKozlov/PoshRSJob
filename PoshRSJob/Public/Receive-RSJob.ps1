@@ -73,7 +73,6 @@ Function Receive-RSJob {
             $DebugPreference = 'Continue'
         }
         $List = New-Object System.Collections.ArrayList
-        $isReseivedStates = @("Completed", "Failed", "Stopped")
     }
     Process {
         Write-Debug "Receive-RSJob. ParameterSet: $($PSCmdlet.ParameterSetName)"
@@ -89,9 +88,7 @@ Function Receive-RSJob {
                     [System.Threading.Monitor]::Exit($PoshRS_Jobs.syncroot)
                 }
                 $Job | WriteStream
-                if ($isReseivedStates -contains $Job.State) {
-                    $Job | SetIsReceived -SetTrue
-                }
+                $Job | SetIsReceived
             }
         }
         elseif ($PSBoundParameters[$Property]) { # Receive data in the End block

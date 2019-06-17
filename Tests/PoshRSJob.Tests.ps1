@@ -253,7 +253,6 @@ Describe "Get-RSJob PS$PSVersion" {
             $Output.count | Should be 12
             $Props -contains "Id" | Should be $True
             $Props -contains "State" | Should be $True
-            $Props -contains "HasMoreData" | Should be $True
         }
 
         It 'should return job by state' {
@@ -510,6 +509,23 @@ Describe "Remove-RSJob PS$PSVersion" {
             $Output = @( Get-RSJob @Verbose )
 
             $Output.Count | Should be 0
+        }
+    }
+}
+
+Describe "HasMoreData property regression test on PS$PSVersion" {
+    Context 'Strict mode' {
+        $j1 = Start-RSJob { 1 }
+        $j2 = Start-RSJob { New-Object -TypeName PSObject -Property @{ N = 'v' } }
+        Start-Sleep -Milliseconds 100 # Sleep for a while (so ps v2 create OutputBuffer)
+        It 'should return HasMoreData $TRUE on non-received jobs' {
+            $j1.HasMoreData | Should Be $true
+            $j2.HasMoreData | Should Be $true
+        }
+        $null = Get-RSJob | Receive-RSJob
+        It 'should return HasMoreData $FALSE on already received jobs' {
+            $j1.HasMoreData | Should Be $false
+            $j2.HasMoreData | Should Be $false
         }
     }
 }

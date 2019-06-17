@@ -20,16 +20,21 @@
             Else {
                 If ($State -eq 'Completed' -AND $This.Handle.IsCompleted -AND (-Not $This.Completed)) {
                     $Output = $This.Innerjob.GetType().GetProperty('OutputBuffer',$Flags)
-                    $Results = $Output.GetValue($This.Innerjob)
-                    If ($Results.count -gt 0 -AND (-NOT [string]::IsNullOrEmpty($Results))) {
-                        $True
-                    }
-                    Else {
+                    if ($null -eq $Output) {
                         $False
+                    }
+                    else {
+                      $Results = $Output.GetValue($This.Innerjob)
+                      If ($Results -and $Results.Count) {
+                          $True
+                      }
+                      Else {
+                          $False
+                      }
                     }
                 }
                 Else {
-                    If ($This.Output -AND (-NOT [string]::IsNullOrEmpty($This.Output))) {
+                    If ($This.Output -and $This.Output.Count) {
                         $True
                     }
                     Else {
