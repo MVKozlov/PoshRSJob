@@ -1,6 +1,6 @@
 #
 # PoshRSJob
-# Version 1.7.5.0
+# Version 1.7.5.1
 #
 # Boe Prox (c) 2014
 # http://learn-powershell.net
@@ -13,7 +13,7 @@
 ModuleToProcess = 'PoshRSJob.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.7.5.0'
+ModuleVersion = '1.7.5.1'
 
 # ID used to uniquely identify this module
 GUID = '9b17fb0f-e939-4a5c-b194-3f2247452972'
