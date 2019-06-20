@@ -573,7 +573,7 @@ Function Start-RSJob {
                 }
                 [void]$RunspacePool.SetMaxRunspaces($Throttle)
                 If ($ThreadOptions) {
-                    [void]$RunspacePool.ThreadOptions = $ThreadOptions
+                    $RunspacePool.ThreadOptions = $ThreadOptions
                 }
                 If ($PSVersionTable.PSVersion.Major -gt 2) {
                     $RunspacePool.CleanupInterval = [timespan]::FromMinutes(2)
