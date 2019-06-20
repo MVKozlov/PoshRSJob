@@ -92,29 +92,29 @@ FileList = 'PoshRSJob.psd1', 'PoshRSJob.psm1', 'en-US\about_PoshRSJob.help.txt',
 # Private data to pass to the module specified in ModuleToProcess
 PrivateData = @{
     PSData = @{
-			# The primary categorization of this module (from the TechNet Gallery tech tree).
-			Category = "Multithreading"
+            # The primary categorization of this module (from the TechNet Gallery tech tree).
+            Category = "Multithreading"
 
-			# Keyword tags to help users find this module via navigations and search.
-			Tags = @('PoshRSJob', 'Runspace','RunspacePool', 'Linux', 'PowerShellCore', 'RSJob')
+            # Keyword tags to help users find this module via navigations and search.
+            Tags = @('PoshRSJob', 'Runspace','RunspacePool', 'Linux', 'PowerShellCore', 'RSJob')
 
-			# The web address of an icon which can be used in galleries to represent this module
-			#IconUri = ''
+            # The web address of an icon which can be used in galleries to represent this module
+            #IconUri = ''
 
-			# The web address of this module's project or support homepage.
-			ProjectUri = "https://github.com/proxb/PoshRSJob"
+            # The web address of this module's project or support homepage.
+            ProjectUri = "https://github.com/proxb/PoshRSJob"
 
-			# The web address of this module's license. Points to a page that's embeddable and linkable.
-			LicenseUri = "https://opensource.org/licenses/MIT"
+            # The web address of this module's license. Points to a page that's embeddable and linkable.
+            LicenseUri = "https://opensource.org/licenses/MIT"
 
-			# Release notes for this particular version of the module
-			# ReleaseNotes = False
+            # Release notes for this particular version of the module
+            # ReleaseNotes = False
 
-			# If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
-			RequireLicenseAcceptance = "False"
+            # If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
+            RequireLicenseAcceptance = "False"
 
-			# Indicates this is a pre-release/testing version of the module.
-			IsPrerelease = 'False'
-		}
+            # Indicates this is a pre-release/testing version of the module.
+            IsPrerelease = 'False'
+        }
     }
 }

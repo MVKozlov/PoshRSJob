@@ -3,7 +3,7 @@ Function RegisterScriptScopeFunction {
     Param (
         [parameter()]
         [string[]]$Name
-    )    
+    )
     $FoundName = @()
     Write-Verbose "Getting callstacks"
     $PSCallStack = Get-PSCallStack
@@ -28,21 +28,21 @@ Function RegisterScriptScopeFunction {
                 $Functions | ForEach-Object {
                     If ($PSBoundParameters.ContainsKey('Name')) {
                         If ($Name -contains $_.Name -and $FoundName -notcontains $_.Name) {
-                            Write-Verbose "Loading $($_.Name)" 
+                            Write-Verbose "Loading $($_.Name)"
                             $FoundName += $_.Name
                             .([scriptblock]::Create("Function Script:$($_.Name) $($_.Body)"))
                         }
                     } Else {
                         if ($FoundName -notcontains $_.Name) {
-                            Write-Verbose "Loading $($_.Name)" 
+                            Write-Verbose "Loading $($_.Name)"
                             $FoundName += $_.Name
                             .([scriptblock]::Create("Function Script:$($_.Name) $($_.Body)"))
                         }
                     }
                 }
 
-                # Stop searching callstacks once we found what we want   
-                if ($Name.Count -eq $FoundName.Count) {       
+                # Stop searching callstacks once we found what we want
+                if ($Name.Count -eq $FoundName.Count) {
                     break
                 }
             }

@@ -32,7 +32,7 @@ Function Start-RSJob {
 
         .PARAMETER Throttle
             Number of concurrent running runspace jobs which are allowed at a time.
-        
+
         .PARAMETER ThreadOptions
             Thread option used during creation of runspaces.
 
@@ -621,22 +621,16 @@ Function Start-RSJob {
                 }
             }
             Write-Verbose "Checking for ArgumentList"
-#            if ($ArgumentList.Count -eq 1) {
-#                Write-Verbose "Adding Argument: $($ArgumentList[0]) <$($ArgumentList[0].GetType().Fullname)>"
-#                [void]$PowerShell.AddArgument($ArgumentList[0])
-#            }
-#            else {
-                ForEach ($Argument in $ArgumentList) {
-                    if ($null -eq $Argument) {
-                        Write-Verbose "Adding Argument: $($Argument) <NULL>"
-                    }
-                    else {
-                        Write-Verbose "Adding Argument: $($Argument) <$($Argument.GetType().Fullname)>"
-                    }
-
-                    [void]$PowerShell.AddArgument($Argument)
+            ForEach ($Argument in $ArgumentList) {
+                if ($null -eq $Argument) {
+                    Write-Verbose "Adding Argument: $($Argument) <NULL>"
                 }
-#            }
+                else {
+                    Write-Verbose "Adding Argument: $($Argument) <$($Argument.GetType().Fullname)>"
+                }
+
+                [void]$PowerShell.AddArgument($Argument)
+            }
 
             Write-Verbose "Invoking Runspace"
             $Handle = $PowerShell.BeginInvoke()

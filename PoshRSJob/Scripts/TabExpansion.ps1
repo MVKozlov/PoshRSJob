@@ -8,7 +8,7 @@ $completion_ID = {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
 
     Get-RSJob | Sort-Object -Property Id | Where-Object { $_.Id -like "$wordToComplete*" } |ForEach-Object {
-        New-Object System.Management.Automation.CompletionResult $_.Id, $_.Id, 'ParameterValue', ('{0} ({1})' -f $_.Description, $_.ID) 
+        New-Object System.Management.Automation.CompletionResult $_.Id, $_.Id, 'ParameterValue', ('{0} ({1})' -f $_.Description, $_.ID)
     }
 }
 #endregion Job ID
@@ -17,11 +17,11 @@ $completion_Name = {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
 
     Get-RSJob | Sort-Object -Property Name | Where-Object { $_.Name -like "$wordToComplete*" } |ForEach-Object {
-        New-Object System.Management.Automation.CompletionResult $_.Name, $_.Name, 'ParameterValue', ('{0} ({1})' -f $_.Description, $_.ID) 
+        New-Object System.Management.Automation.CompletionResult $_.Name, $_.Name, 'ParameterValue', ('{0} ({1})' -f $_.Description, $_.ID)
     }
 }
 #endregion Job Name
-If (-not (Get-Variable -Scope Global | Where-Object {$_.Name -eq "options"})) { 
+If (-not (Get-Variable -Scope Global | Where-Object {$_.Name -eq "options"})) {
     $global:options = @{
         CustomArgumentCompleters = @{}
         NativeArgumentCompleters = @{}

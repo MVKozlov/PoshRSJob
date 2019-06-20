@@ -2,7 +2,7 @@ Function GetParamVariable {
     [CmdletBinding()]
     param (
         [scriptblock]$ScriptBlock
-    )     
+    )
     # Tokenize the script
     [array] $tokens = [Management.Automation.PSParser]::Tokenize($ScriptBlock, [ref]$null) | Where-Object {
         $_.Type -ne 'NewLine' -and  $_.Type -ne 'Comment'

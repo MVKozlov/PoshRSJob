@@ -21,7 +21,7 @@ Function ConvertScriptBlockV2 {
     If ($UsingVariableValues) {
         [void]$Params.AddRange(@($UsingVariableValues | Select-Object -ExpandProperty NewName))
     }
-    $NewParams = $Params -join ', '  
+    $NewParams = $Params -join ', '
     If (-Not $HasParam) {
         [void]$StringBuilder.Append("Param($($NewParams))")
     }
@@ -49,7 +49,7 @@ Function ConvertScriptBlockV2 {
                 $Script:GroupStart++
                 If ($Script:AddUsing -AND $Script:GroupStart -eq 1) {
                     $Script:AddUsing = $False
-                    [void]$StringBuilder.Append($Tokens[$i].Content)                    
+                    [void]$StringBuilder.Append($Tokens[$i].Content)
                     If ($HasParam) {
                         [void]$StringBuilder.Append("$($NewParams),")
                     }
@@ -74,16 +74,16 @@ Function ConvertScriptBlockV2 {
                     [void]$StringBuilder.Append($Tokens[$i].Content)
                 } Else {
                     [void]$StringBuilder.Append($Tokens[$i].Content)
-                }                
+                }
             }
             'Type' {
                 [void]$StringBuilder.Append('[{0}]' -f $Tokens[$i].Content)
             }
             Default {
-                [void]$StringBuilder.Append($Tokens[$i].Content)         
+                [void]$StringBuilder.Append($Tokens[$i].Content)
             }
-        } 
-        $Previous = $Tokens[$i]   
+        }
+        $Previous = $Tokens[$i]
     }
     #$StringBuilder.ToString()
     [scriptblock]::Create($StringBuilder.ToString())

@@ -6,7 +6,7 @@ SYNOPSIS
 
 DESCRIPTION
     PoshRSJob uses runspaces and runspacepools to provide a PSJobs based framework without
-    the overhead of PSJobs. This allows for the throttling of RSJobs as they are being process. Variables 
+    the overhead of PSJobs. This allows for the throttling of RSJobs as they are being process. Variables
     can be shared between runspaces using a synchronized collection and the locking of collections is recommnended.
 
     It is important that you do not use "ForEach" when handling data going into Start-RSJob as doing so

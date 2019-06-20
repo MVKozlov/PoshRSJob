@@ -12,7 +12,7 @@ Function ConvertScript {
     If ($InsertPSItem) {
         [void]$Params.Add('$_')
     }
-    If ($UsingVariables) {        
+    If ($UsingVariables) {
         ForEach ($Ast in $UsingVariables) {
             [void]$list.Add($Ast.SubExpression)
         }
