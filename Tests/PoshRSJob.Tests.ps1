@@ -515,8 +515,8 @@ Describe "Remove-RSJob PS$PSVersion" {
     }
 }
 
-Describe "HasMoreData property regression test on PS$PSVersion" {
-    Context 'Strict mode' {
+Describe "Regression tests on PS$PSVersion" {
+    Context 'HasMoreData property' {
         $j1 = Start-RSJob { 1 }
         $j2 = Start-RSJob { New-Object -TypeName PSObject -Property @{ N = 'v' } }
         Start-Sleep -Milliseconds 100 # Sleep for a while (so ps v2 create OutputBuffer)
@@ -530,16 +530,12 @@ Describe "HasMoreData property regression test on PS$PSVersion" {
             $j2.HasMoreData | Should Be $false
         }
     }
-}
-
-Describe "Test proper job pipelining for Wait/Receive" {
-    It "Should receive data as soon as wait done" {
-        $jobs = (Start-RSJob { Start-Sleep -Seconds 5; [datetime]::Now }),
-                (Start-RSJob { Start-Sleep -Seconds 10; [datetime]::Now })
-        $objects = $jobs | Wait-RSJob | Receive-RSJob | ForEach-Object { [PSCustomObject]@{JTime = $_; RTime= [datetime]::Now} }
-        $objects.Count | Should be 2
-        ($objects[0].RTime - $objects[0].JTime).TotalSeconds -le 0.5 | Should Be $true
-        ($objects[1].RTime - $objects[1].JTime).TotalSeconds -le 0.5 | Should Be $true
+    Context 'Proper Wait/Receive pipelining' {
+        It "Shlould receive data as soon as wait done" {
+            $a = 1..10
+            $b = $a | Get-Random -Count 10 | Start-RSJob -Throttle 10 { Start-Sleep -Seconds $_; $_ } | Wait-RSJob | Receive-RSJob
+            ($a -join '') | Should Be ($b -join '')
+        }
     }
 }
 

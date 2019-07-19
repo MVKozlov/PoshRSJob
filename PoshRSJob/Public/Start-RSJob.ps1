@@ -248,24 +248,24 @@ Function Start-RSJob {
                     # compatibility
                     $ModulePath = $ModulePath.Path.TrimEnd('\')
                     Write-Verbose "Found module(s) path to import: $ModulePath"
+                    If (Test-Path -Path $ModulePath -PathType Container) {
+                        # It's a path containing one or more modules
+                        Write-Verbose "Importing module(s) by path: $ModulePath"
+                        Write-Debug "Calling InitialSessionState.ImportPSModulesFromPath($ModulePath)"
+                        [void]$InitialSessionState.ImportPSModulesFromPath($ModulePath);
+                    }
+                    Else {
+                        # It's a module manifest, script, or binary file
+                        Write-Verbose "Found module file to import: $ModulePath"
+                        Write-Verbose "Calling InitialSessionState.ImportPSModule($ModulePath)"
+                        [void]$InitialSessionState.ImportPSModule($ModulePath);
+                    }
                 }
                 Catch {
                     # Assume it's the name of an installed module
                     Write-Verbose "Importing module by name: $Module"
                     Write-Debug "Calling InitialSessionState.ImportPSModule($Module)"
                     [void]$InitialSessionState.ImportPSModule($Module);
-                }
-                If (Test-Path -Path $ModulePath -PathType Container) {
-                    # It's a path containing one or more modules
-                    Write-Verbose "Importing module(s) by path: $ModulePath"
-                    Write-Debug "Calling InitialSessionState.ImportPSModulesFromPath($ModulePath)"
-                    [void]$InitialSessionState.ImportPSModulesFromPath($ModulePath);
-                }
-                Else {
-                    # It's a module manifest, script, or binary file
-                    Write-Verbose "Found module file to import: $ModulePath"
-                    Write-Verbose "Calling InitialSessionState.ImportPSModule($ModulePath)"
-                    [void]$InitialSessionState.ImportPSModule($ModulePath);
                 }
             }
         }
