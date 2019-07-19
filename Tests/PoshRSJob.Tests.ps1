@@ -51,7 +51,7 @@ $ParameterTestCases = @(
     @{
        Case = 'by job object from pipeline (name)'
        Mode = 2
-       Param = { '' | Select @{n='Job'; e={$TestJob}} }
+       Param = { '' | Select-Object @{n='Job'; e={$TestJob}} }
     },
     @{
        Case = 'by job object from pipeline (value)'
@@ -536,6 +536,26 @@ Describe "Regression tests on PS$PSVersion" {
             $b = $a | Get-Random -Count 10 | Start-RSJob -Throttle 10 { Start-Sleep -Seconds $_; $_ } | Wait-RSJob | Receive-RSJob
             ($a -join '') | Should Be ($b -join '')
         }
+    }
+    Context 'ModulesToImport module resolving' {
+        $name = 'PoshRSJobTestModule'
+        $modules = 1..2 | Foreach-Object {
+            "function test-$name$_ { `"$name$_ output`" }; Export-ModuleMember -Function test-$name$_"
+        }
+        $modulePath, $null = $env:PSModulePath -split ';',2
+        $m1p = (Join-Path $modulePath "$($name)1\$($name)1.psm1" )
+        $m2p = (Join-Path $env:TEMP "$($name)2.psm1" )
+        $m1folder = New-Item -ItemType Directory -Path (Split-Path $m1p) -Force
+        $modules[0] | Set-Content -Path $m1p
+        $modules[1] | Set-Content -Path $m2p
+        It "Should properly resolve test modules" {
+            { $script:mjob2 = Start-RSJob { test-PoshRSJobTestModule1; test-PoshRSJobTestModule2 } -ModulesToImport "$($name)1", (Join-Path $env:TEMP "$($name)2" ) } | Should Not Throw
+            $mjob2 | Should Not BeNullOrEmpty
+            ($mjob2 | Wait-RSJob | Receive-RSJob) -join ';' | Should Be "$($name)1 output;$($name)2 output"
+        }
+        Remove-Item -Confirm:$false -Path (Split-Path $m1p) -Recurse
+        Remove-Item -Confirm:$false -Path $m2p
+        $mjob2 | Remove-RSJob -ErrorAction SilentlyContinue
     }
 }
 
