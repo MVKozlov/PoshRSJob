@@ -5,6 +5,7 @@ Function WriteStream {
         [Object]$IndividualJob
     )
     Begin {
+        $VerbosePreference = 'Continue'
         $Streams = "Verbose","Warning","Error","Output","Debug","Information"
     }
 
