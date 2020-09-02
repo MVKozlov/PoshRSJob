@@ -302,8 +302,17 @@ New-Alias -Name spsj -Value Stop-RSJob -Force
 New-Alias -Name wsj -Value Wait-RSJob -Force
 #endregion Aliases
 
+#region TabExpansion
+$oldTabExpansion2 = $function:TabExpansion2
+. "$ScriptPath/Scripts/TabExpansion.ps1"
+#endregion TabExpansion
+
 #region Handle Module Removal
 $PoshRS_OnRemoveScript = {
+    if ($null -ne $oldTabExpansion2)
+    {
+        Set-Item function:\TabExpansion2 $oldTabExpansion2
+    }
     $PoshRS_jobCleanup.Flag=$False
     $PoshRS_RunspacePoolCleanup.Flag=$False
     #Let sit for a second to make sure it has had time to stop

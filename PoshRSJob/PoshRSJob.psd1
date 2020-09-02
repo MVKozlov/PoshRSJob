@@ -55,7 +55,7 @@ Description = 'Module designed to use PowerShell runspaces to create jobs that a
 #RequiredAssemblies = @()
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module
-ScriptsToProcess = @('Scripts\TabExpansion.ps1')
+#ScriptsToProcess = @('Scripts\TabExpansion.ps1')
 
 # Type files (.ps1xml) to be loaded when importing this module
 #TypesToProcess = 'TypeData\PoshRSJob.Types.ps1xml'
